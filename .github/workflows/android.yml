@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 360
     steps:
       - name: Checkout (somente o zip)
@@ -38,9 +38,11 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      - name: Configurar Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Instalar NDK e CMake
         run: |
-          yes | sdkmanager --licenses >/dev/null || true
           sdkmanager "ndk;28.2.13676358" "cmake;3.31.5" "platforms;android-36" "build-tools;36.0.0"
 
       - name: Compilar APK
