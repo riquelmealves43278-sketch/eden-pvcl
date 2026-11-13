@@ -20,7 +20,12 @@ jobs:
         run: |
           unzip -q eden.zip
           cd eden
-          patch -p1 < ../eden_pvcl.patch
+          if grep -q pvcl_enabled src/common/settings.h; then
+            echo "O código já contém o PVCL, pulando o patch."
+          else
+            patch -p1 --batch < ../eden_pvcl.patch
+          fi
+          grep -q pvcl_enabled src/common/settings.h
           git init -q
           git config user.email "ci@example.com"
           git config user.name "ci"
