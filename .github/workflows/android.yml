@@ -45,10 +45,34 @@ jobs:
           yes | "$SDKM" --licenses >/dev/null || true
           "$SDKM" "ndk;28.2.13676358" "cmake;3.31.5" "platforms;android-36" "build-tools;36.0.0"
 
+      - name: Instalar ferramentas de build
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y glslang-tools spirv-tools nasm pkg-config autoconf automake libtool make
+          which glslangValidator
+
       - name: Compilar APK
         working-directory: eden
         run: |
-          sh .ci/android/build.sh -t standard -b Release
+          set -o pipefail
+          sh .ci/android/build.sh -t standard -b Release 2>&1 | tee "$GITHUB_WORKSPACE/build.log"
+
+      - name: Mostrar o erro do CMake/compilador
+        if: failure()
+        run: |
+          echo "=== CMake Error ==="
+          grep -n -A15 "CMake Error" build.log | head -120 || true
+          echo "=== error: ==="
+          grep -n -B2 -A6 "error:" build.log | head -120 || true
+          echo "=== FAILED: ==="
+          grep -n -A12 "FAILED:" build.log | head -80 || true
+
+      - name: Salvar log completo
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
 
       - name: Enviar APK
         uses: actions/upload-artifact@v4
