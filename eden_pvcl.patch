@@ -1,0 +1,372 @@
+diff -ruN eden_orig/src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/BooleanSetting.kt eden/src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/BooleanSetting.kt
+--- eden_orig/src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/BooleanSetting.kt	2026-11-12 19:52:09.439951971 +0000
++++ eden/src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/BooleanSetting.kt	2026-11-12 19:52:30.164670494 +0000
+@@ -34,6 +34,8 @@
+     BUFFER_REORDER_DISABLE("disable_buffer_reorder"),
+     RENDERER_DEBUG("debug"),
+     RENDERER_PATCH_OLD_QCOM_DRIVERS("patch_old_qcom_drivers"),
++    PVCL_ENABLED("pvcl_enabled"),
++    PVCL_VERBOSE_LOG("pvcl_verbose_log"),
+     RENDERER_VERTEX_INPUT_DYNAMIC_STATE("vertex_input_dynamic_state"),
+     RENDERER_SAMPLE_SHADING("sample_shading"),
+     RENDERER_FRAME_GEN("frame_gen"),
+diff -ruN eden_orig/src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/Settings.kt eden/src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/Settings.kt
+--- eden_orig/src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/Settings.kt	2026-11-12 19:52:09.440023907 +0000
++++ eden/src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/Settings.kt	2026-11-12 19:52:30.164225675 +0000
+@@ -30,6 +30,7 @@
+         SECTION_CUSTOM_PATHS(R.string.preferences_custom_paths),
+         SECTION_DEBUG(R.string.preferences_debug),
+         SECTION_FREEDRENO(R.string.freedreno_settings_title),
++        SECTION_PVCL(R.string.pvcl_settings_title),
+         SECTION_APPLETS(R.string.applets_menu);
+     }
+ 
+diff -ruN eden_orig/src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/view/SettingsItem.kt eden/src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/view/SettingsItem.kt
+--- eden_orig/src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/view/SettingsItem.kt	2026-11-12 19:52:09.440260693 +0000
++++ eden/src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/view/SettingsItem.kt	2026-11-12 19:52:30.165226008 +0000
+@@ -1006,6 +1006,20 @@
+                     descriptionId = R.string.renderer_debug_description
+                 )
+             )
++            put(
++                SwitchSetting(
++                    BooleanSetting.PVCL_ENABLED,
++                    titleId = R.string.pvcl_enabled,
++                    descriptionId = R.string.pvcl_enabled_description
++                )
++            )
++            put(
++                SwitchSetting(
++                    BooleanSetting.PVCL_VERBOSE_LOG,
++                    titleId = R.string.pvcl_verbose_log,
++                    descriptionId = R.string.pvcl_verbose_log_description
++                )
++            )
+             // BCn texture patching debug override
+             put(
+                 SwitchSetting(
+diff -ruN eden_orig/src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/ui/SettingsFragmentPresenter.kt eden/src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/ui/SettingsFragmentPresenter.kt
+--- eden_orig/src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/ui/SettingsFragmentPresenter.kt	2026-11-12 19:52:09.440975755 +0000
++++ eden/src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/ui/SettingsFragmentPresenter.kt	2026-11-12 19:52:30.166514101 +0000
+@@ -189,6 +189,7 @@
+             MenuTag.SECTION_APP_SETTINGS -> addThemeSettings(sl)
+             MenuTag.SECTION_DEBUG -> addDebugSettings(sl)
+             MenuTag.SECTION_FREEDRENO -> addFreedrenoSettings(sl)
++            MenuTag.SECTION_PVCL -> addPvclSettings(sl)
+             MenuTag.SECTION_APPLETS -> addAppletSettings(sl)
+             MenuTag.SECTION_CUSTOM_PATHS -> addCustomPathsSettings(sl)
+         }
+@@ -466,6 +467,14 @@
+             )
+             add(
+                 SubmenuSetting(
++                    titleId = R.string.pvcl_settings_title,
++                    descriptionId = R.string.pvcl_settings_description,
++                    iconId = R.drawable.ic_graphics,
++                    menuKey = MenuTag.SECTION_PVCL
++                )
++            )
++            add(
++                SubmenuSetting(
+                     titleId = R.string.applets_menu,
+                     descriptionId = R.string.applets_menu_description,
+                     iconId = R.drawable.ic_applet,
+@@ -796,6 +805,13 @@
+         // This method is kept for consistency with other menu sections
+     }
+ 
++    private fun addPvclSettings(sl: ArrayList<SettingsItem>) {
++        sl.apply {
++            add(BooleanSetting.PVCL_ENABLED.key)
++            add(BooleanSetting.PVCL_VERBOSE_LOG.key)
++        }
++    }
++
+     private fun addAppletSettings(sl: ArrayList<SettingsItem>) {
+         sl.apply {
+             add(IntSetting.SWKBD_APPLET.key)
+diff -ruN eden_orig/src/android/app/src/main/res/values/strings.xml eden/src/android/app/src/main/res/values/strings.xml
+--- eden_orig/src/android/app/src/main/res/values/strings.xml	2026-11-12 19:52:09.450403598 +0000
++++ eden/src/android/app/src/main/res/values/strings.xml	2026-11-12 19:52:30.167357036 +0000
+@@ -1217,6 +1217,12 @@
+ 
+     <!-- Freedreno Settings -->
+     <string name="freedreno_settings_title">Freedreno Settings</string>
++    <string name="pvcl_settings_title">PVCL</string>
++    <string name="pvcl_settings_description">Compatibility layer for GPUs missing Vulkan features (PowerVR)</string>
++    <string name="pvcl_enabled">Enable PVCL compatibility</string>
++    <string name="pvcl_enabled_description">Allows the GPU to be used even when it lacks features Eden normally requires (anisotropic filtering, wireframe mode, dual-source blending, multiple viewports, extended image gather, demote to helper invocation) by using software fallbacks. Visual glitches may occur in some games. Restart the game after changing.</string>
++    <string name="pvcl_verbose_log">PVCL verbose log</string>
++    <string name="pvcl_verbose_log_description">Writes extra information about missing features to the log.</string>
+     <string name="gpu_driver_settings">GPU Driver Settings</string>
+     <string name="freedreno_presets">Quick Presets</string>
+     <string name="freedreno_current_settings">Current Settings</string>
+diff -ruN eden_orig/src/android/app/src/main/res/values-pt-rBR/strings.xml eden/src/android/app/src/main/res/values-pt-rBR/strings.xml
+--- eden_orig/src/android/app/src/main/res/values-pt-rBR/strings.xml	2026-11-12 19:52:09.451892226 +0000
++++ eden/src/android/app/src/main/res/values-pt-rBR/strings.xml	2026-11-12 19:52:30.168067019 +0000
+@@ -934,4 +934,10 @@
+     <!-- Licenses screen strings -->
+     <string name="licenses">Licenças</string>
+     <string name="license_fidelityfx_fsr_description">Upscaling de alta qualidade da AMD</string>
+-    </resources>
++        <string name="pvcl_settings_title">PVCL</string>
++    <string name="pvcl_settings_description">Camada de compatibilidade para GPUs sem recursos Vulkan (PowerVR)</string>
++    <string name="pvcl_enabled">Ativar compatibilidade PVCL</string>
++    <string name="pvcl_enabled_description">Permite usar a GPU mesmo sem recursos que o Eden normalmente exige (filtro anisotrópico, modo wireframe, blend de fonte dupla, múltiplos viewports, gather estendido, demote to helper invocation), usando alternativas por software. Pode causar falhas visuais em alguns jogos. Reinicie o jogo após alterar.</string>
++    <string name="pvcl_verbose_log">Log detalhado do PVCL</string>
++    <string name="pvcl_verbose_log_description">Grava no log informações extras sobre recursos ausentes.</string>
++</resources>
+diff -ruN eden_orig/src/common/settings.h eden/src/common/settings.h
+--- eden_orig/src/common/settings.h	2026-11-12 19:52:09.460286824 +0000
++++ eden/src/common/settings.h	2026-11-12 19:52:09.563221483 +0000
+@@ -779,6 +779,9 @@
+     Setting<bool> patch_old_qcom_drivers{linkage, false, "patch_old_qcom_drivers",
+                                          Category::RendererDebug};
+ #endif
++    // PVCL: compatibility layer for GPUs (e.g. PowerVR) missing mandatory Vulkan features
++    Setting<bool> pvcl_enabled{linkage, true, "pvcl_enabled", Category::RendererDebug};
++    Setting<bool> pvcl_verbose_log{linkage, false, "pvcl_verbose_log", Category::RendererDebug};
+     SwitchableSetting<bool> disable_buffer_reorder{linkage, false, "disable_buffer_reorder",
+                                          Category::RendererDebug,
+                                          Specialization::Default,
+diff -ruN eden_orig/src/shader_recompiler/backend/spirv/emit_spirv.cpp eden/src/shader_recompiler/backend/spirv/emit_spirv.cpp
+--- eden_orig/src/shader_recompiler/backend/spirv/emit_spirv.cpp	2026-11-12 19:52:09.499477620 +0000
++++ eden/src/shader_recompiler/backend/spirv/emit_spirv.cpp	2026-11-12 19:52:09.567205150 +0000
+@@ -477,7 +477,9 @@
+         ctx.AddCapability(spv::Capability::DerivativeControl);
+     }
+     // TODO: Track this usage
+-    ctx.AddCapability(spv::Capability::ImageGatherExtended);
++    if (profile.support_image_gather_extended) {
++        ctx.AddCapability(spv::Capability::ImageGatherExtended);
++    }
+     ctx.AddCapability(spv::Capability::ImageQuery);
+     ctx.AddCapability(spv::Capability::SampledBuffer);
+     if (!ctx.non_uniform_ids.empty()) {
+diff -ruN eden_orig/src/shader_recompiler/backend/spirv/emit_spirv_image.cpp eden/src/shader_recompiler/backend/spirv/emit_spirv_image.cpp
+--- eden_orig/src/shader_recompiler/backend/spirv/emit_spirv_image.cpp	2026-11-12 19:52:09.499597091 +0000
++++ eden/src/shader_recompiler/backend/spirv/emit_spirv_image.cpp	2026-11-12 19:52:09.567389261 +0000
+@@ -92,7 +92,12 @@
+ 
+     explicit ImageOperands(EmitContext& ctx, const IR::Value& offset, const IR::Value& offset2) {
+         if (offset2.IsEmpty()) {
+-            AddOffset(ctx, offset, ImageGatherOffsetAllowed);
++            AddOffset(ctx, offset,
++                      ImageGatherOffsetAllowed && ctx.profile.support_image_gather_extended);
++            return;
++        }
++        if (!ctx.profile.support_image_gather_extended) {
++            LOG_WARNING(Shader_SPIRV, "PVCL: PTP gather offsets unsupported, ignoring");
+             return;
+         }
+         const std::array values{offset.InstRecursive(), offset2.InstRecursive()};
+diff -ruN eden_orig/src/shader_recompiler/profile.h eden/src/shader_recompiler/profile.h
+--- eden_orig/src/shader_recompiler/profile.h	2026-11-12 19:52:09.501975336 +0000
++++ eden/src/shader_recompiler/profile.h	2026-11-12 19:52:09.567017892 +0000
+@@ -114,6 +114,9 @@
+     u64 min_ssbo_alignment{};
+     u32 max_user_clip_distances{};
+ 
++    /// shaderImageGatherExtended: runtime offsets and PTP (ConstOffsets) in gathers
++    bool support_image_gather_extended{true};
++
+     bool SupportsSubgroupStage(Stage stage) const {
+         return (supported_subgroup_stages & (1u << static_cast<u32>(stage))) != 0;
+     }
+diff -ruN eden_orig/src/video_core/renderer_vulkan/vk_graphics_pipeline.cpp eden/src/video_core/renderer_vulkan/vk_graphics_pipeline.cpp
+--- eden_orig/src/video_core/renderer_vulkan/vk_graphics_pipeline.cpp	2026-11-12 19:52:09.507888195 +0000
++++ eden/src/video_core/renderer_vulkan/vk_graphics_pipeline.cpp	2026-11-12 19:52:09.566450046 +0000
+@@ -38,6 +38,26 @@
+ 
+ namespace Vulkan {
+ namespace {
++// PVCL: without dualSrcBlend the SRC1 factors are invalid; approximate with the SRC0 factors.
++VkBlendFactor SafeBlendFactor(const Device& device, Maxwell::Blend::Factor factor) {
++    const VkBlendFactor result = MaxwellToVK::BlendFactor(factor);
++    if (device.SupportsDualSrcBlend()) {
++        return result;
++    }
++    switch (result) {
++    case VK_BLEND_FACTOR_SRC1_COLOR:
++        return VK_BLEND_FACTOR_SRC_COLOR;
++    case VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR:
++        return VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
++    case VK_BLEND_FACTOR_SRC1_ALPHA:
++        return VK_BLEND_FACTOR_SRC_ALPHA;
++    case VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA:
++        return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
++    default:
++        return result;
++    }
++}
++
+ using boost::container::small_vector;
+ using boost::container::static_vector;
+ using Shader::ImageBufferDescriptor;
+@@ -825,8 +845,10 @@
+         static_cast<VkBool32>(dynamic.depth_clamp_disabled == 0 ? VK_TRUE : VK_FALSE),
+         .rasterizerDiscardEnable =
+         static_cast<VkBool32>(dynamic.rasterize_enable == 0 ? VK_TRUE : VK_FALSE),
+-        .polygonMode =
+-        MaxwellToVK::PolygonMode(FixedPipelineState::UnpackPolygonMode(key.state.polygon_mode)),
++        .polygonMode = device.SupportsFillModeNonSolid()
++                           ? MaxwellToVK::PolygonMode(
++                                 FixedPipelineState::UnpackPolygonMode(key.state.polygon_mode))
++                           : VK_POLYGON_MODE_FILL,
+         .cullMode = static_cast<VkCullModeFlags>(
+             dynamic.cull_enable ? MaxwellToVK::CullFace(dynamic.CullFace()) : VK_CULL_MODE_NONE),
+         .frontFace = MaxwellToVK::FrontFace(dynamic.FrontFace()),
+@@ -937,11 +959,11 @@
+         }
+         cb_attachments.push_back({
+             .blendEnable = blend.enable != 0,
+-            .srcColorBlendFactor = MaxwellToVK::BlendFactor(blend.SourceRGBFactor()),
+-            .dstColorBlendFactor = MaxwellToVK::BlendFactor(blend.DestRGBFactor()),
++            .srcColorBlendFactor = SafeBlendFactor(device, blend.SourceRGBFactor()),
++            .dstColorBlendFactor = SafeBlendFactor(device, blend.DestRGBFactor()),
+             .colorBlendOp = MaxwellToVK::BlendEquation(blend.EquationRGB()),
+-            .srcAlphaBlendFactor = MaxwellToVK::BlendFactor(blend.SourceAlphaFactor()),
+-            .dstAlphaBlendFactor = MaxwellToVK::BlendFactor(blend.DestAlphaFactor()),
++            .srcAlphaBlendFactor = SafeBlendFactor(device, blend.SourceAlphaFactor()),
++            .dstAlphaBlendFactor = SafeBlendFactor(device, blend.DestAlphaFactor()),
+             .alphaBlendOp = MaxwellToVK::BlendEquation(blend.EquationAlpha()),
+             .colorWriteMask = write_mask,
+         });
+diff -ruN eden_orig/src/video_core/renderer_vulkan/vk_pipeline_cache.cpp eden/src/video_core/renderer_vulkan/vk_pipeline_cache.cpp
+--- eden_orig/src/video_core/renderer_vulkan/vk_pipeline_cache.cpp	2026-11-12 19:52:09.507971657 +0000
++++ eden/src/video_core/renderer_vulkan/vk_pipeline_cache.cpp	2026-11-12 19:52:09.566850879 +0000
+@@ -249,7 +249,8 @@
+             key.state.UnpackComparisonOp(key.state.alpha_test_func.Value()));
+         info.alpha_test_reference = std::bit_cast<float>(key.state.alpha_test_ref);
+ 
+-        info.dual_source_blend = key.state.attachment0_dual_source_blend != 0;
++        info.dual_source_blend =
++            key.state.attachment0_dual_source_blend != 0 && device.SupportsDualSrcBlend();
+ 
+         if (device.IsMoltenVK()) {
+             for (size_t i = 0; i < 8; ++i) {
+@@ -466,7 +467,8 @@
+         .has_broken_robust =
+             device.IsNvidia() && device.GetNvidiaArch() <= NvidiaArchitecture::Arch_Pascal,
+         .min_ssbo_alignment = device.GetStorageBufferAlignment(),
+-        .max_user_clip_distances = device.GetMaxUserClipDistances()
++        .max_user_clip_distances = device.GetMaxUserClipDistances(),
++        .support_image_gather_extended = device.SupportsImageGatherExtended(),
+     };
+ 
+     host_info = Shader::HostTranslateInfo{
+diff -ruN eden_orig/src/video_core/renderer_vulkan/vk_texture_cache.cpp eden/src/video_core/renderer_vulkan/vk_texture_cache.cpp
+--- eden_orig/src/video_core/renderer_vulkan/vk_texture_cache.cpp	2026-11-12 19:52:09.508319160 +0000
++++ eden/src/video_core/renderer_vulkan/vk_texture_cache.cpp	2026-11-12 19:52:09.565852558 +0000
+@@ -2885,7 +2885,8 @@
+         .addressModeV = wrap_v,
+         .addressModeW = wrap_p,
+         .mipLodBias = tsc.LodBias(),
+-        .anisotropyEnable = static_cast<VkBool32>(max_anisotropy > 1.0f),
++        .anisotropyEnable =
++            static_cast<VkBool32>(max_anisotropy > 1.0f && device.SupportsSamplerAnisotropy()),
+         .maxAnisotropy = max_anisotropy,
+         .compareEnable = static_cast<VkBool32>(tsc.depth_compare_enabled),
+         .compareOp = MaxwellToVK::Sampler::DepthCompareFunction(tsc.depth_compare_func),
+@@ -2976,7 +2977,8 @@
+         create_info.anisotropyEnable = VK_FALSE;
+         create_info.maxAnisotropy = 1.0f;
+     } else if (key.reduce_anisotropy) {
+-        create_info.anisotropyEnable = static_cast<VkBool32>(default_anisotropy > 1.0f);
++        create_info.anisotropyEnable = static_cast<VkBool32>(
++            default_anisotropy > 1.0f && device_ptr->SupportsSamplerAnisotropy());
+         create_info.maxAnisotropy = default_anisotropy;
+     }
+     if (!custom_border) {
+diff -ruN eden_orig/src/video_core/vulkan_common/vulkan_device.cpp eden/src/video_core/vulkan_common/vulkan_device.cpp
+--- eden_orig/src/video_core/vulkan_common/vulkan_device.cpp	2026-11-12 19:52:09.509094414 +0000
++++ eden/src/video_core/vulkan_common/vulkan_device.cpp	2026-11-12 19:52:38.794697626 +0000
+@@ -5,6 +5,7 @@
+ // SPDX-License-Identifier: GPL-2.0-or-later
+ 
+ #include <algorithm>
++#include <array>
+ #include <bitset>
+ #include <chrono>
+ #include <filesystem>
+@@ -13,6 +14,7 @@
+ #include <thread>
+ #include "common/container/unordered_map.h"
+ #include "common/container/unordered_set.h"
++#include <string_view>
+ #include <utility>
+ #include <vector>
+ 
+@@ -108,6 +110,20 @@
+ 
+ } // namespace Alternatives
+ 
++// PVCL: features that have a software fallback elsewhere in the renderer, so a driver without
++// them can still be used when the compatibility layer is enabled.
++bool PvclTolerates(const char* name) {
++    if (!Settings::values.pvcl_enabled.GetValue()) {
++        return false;
++    }
++    static constexpr std::array<std::string_view, 6> tolerated{
++        "samplerAnisotropy",   "fillModeNonSolid",
++        "dualSrcBlend",        "multiViewport",
++        "shaderImageGatherExtended", "shaderDemoteToHelperInvocation",
++    };
++    return std::ranges::find(tolerated, std::string_view{name}) != tolerated.end();
++}
++
+ template <typename T>
+ void SetNext(void**& next, T& data) {
+     *next = &data;
+@@ -1152,6 +1168,8 @@
+                             strcmp(#name, "shaderCullDistance") == 0 ||                            \
+                             strcmp(#name, "wideLines") == 0)) {                                    \
+             LOG_INFO(Render_Vulkan, "MoltenVK missing feature {} - using fallback", #name);       \
++        } else if (PvclTolerates(#name)) {                                                          \
++            LOG_WARNING(Render_Vulkan, "PVCL: missing feature {} - using fallback", #name);        \
+         } else {                                                                                    \
+             LOG_ERROR(Render_Vulkan, "Missing required feature {}", #name);                        \
+             suitable = false;                                                                       \
+@@ -1170,6 +1188,16 @@
+     FOR_EACH_VK_RECOMMENDED_FEATURE(LOG_FEATURE);
+     FOR_EACH_VK_MANDATORY_FEATURE(CHECK_FEATURE);
+ 
++    if (Settings::values.pvcl_verbose_log.GetValue()) {
++        LOG_INFO(Render_Vulkan,
++                 "PVCL: samplerAnisotropy={} fillModeNonSolid={} dualSrcBlend={} "
++                 "multiViewport={} shaderImageGatherExtended={} demoteToHelper={}",
++                 features.features.samplerAnisotropy, features.features.fillModeNonSolid,
++                 features.features.dualSrcBlend, features.features.multiViewport,
++                 features.features.shaderImageGatherExtended,
++                 features.shader_demote_to_helper_invocation.shaderDemoteToHelperInvocation);
++    }
++
+ #undef OPTIONAL_FEATURE
+ #undef LOG_FEATURE
+ #undef CHECK_FEATURE
+diff -ruN eden_orig/src/video_core/vulkan_common/vulkan_device.h eden/src/video_core/vulkan_common/vulkan_device.h
+--- eden_orig/src/video_core/vulkan_common/vulkan_device.h	2026-11-12 19:52:09.509120894 +0000
++++ eden/src/video_core/vulkan_common/vulkan_device.h	2026-11-12 19:52:09.564692594 +0000
+@@ -1009,6 +1009,22 @@
+         return features2.features.multiViewport;
+     }
+ 
++    bool SupportsSamplerAnisotropy() const {
++        return features2.features.samplerAnisotropy;
++    }
++
++    bool SupportsFillModeNonSolid() const {
++        return features2.features.fillModeNonSolid;
++    }
++
++    bool SupportsDualSrcBlend() const {
++        return features2.features.dualSrcBlend;
++    }
++
++    bool SupportsImageGatherExtended() const {
++        return features2.features.shaderImageGatherExtended;
++    }
++
+     /// Returns true if the device supports VK_KHR_maintenance1.
+     bool IsKhrMaintenance1Supported() const {
+         return extensions.maintenance1;
