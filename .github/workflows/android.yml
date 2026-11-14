@@ -33,6 +33,13 @@ jobs:
               patch -p1 --batch < ../eden_pvcl2.patch
             fi
           fi
+          if [ -f ../eden_pvcl3.patch ]; then
+            if grep -q "PVCL stencil export" src/video_core/renderer_vulkan/blit_image.cpp; then
+              echo "O código já contém o patch 3, pulando."
+            else
+              patch -p1 --batch < ../eden_pvcl3.patch
+            fi
+          fi
           git init -q
           git config user.email "ci@example.com"
           git config user.name "ci"
@@ -86,3 +93,4 @@ jobs:
         with:
           name: eden-pvcl-apk
           path: eden/artifacts/*
+          
