@@ -26,6 +26,13 @@ jobs:
             patch -p1 --batch < ../eden_pvcl.patch
           fi
           grep -q pvcl_enabled src/common/settings.h
+          if [ -f ../eden_pvcl2.patch ]; then
+            if grep -q pvcl_safe_mode src/common/settings.h; then
+              echo "O código já contém o patch 2, pulando."
+            else
+              patch -p1 --batch < ../eden_pvcl2.patch
+            fi
+          fi
           git init -q
           git config user.email "ci@example.com"
           git config user.name "ci"
@@ -79,4 +86,3 @@ jobs:
         with:
           name: eden-pvcl-apk
           path: eden/artifacts/*
-          
