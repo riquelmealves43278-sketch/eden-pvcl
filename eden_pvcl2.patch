@@ -1,0 +1,309 @@
+diff -ruN eden_v1/src/android/app/src/main/java/org/yuzu/yuzu_emu/YuzuApplication.kt eden/src/android/app/src/main/java/org/yuzu/yuzu_emu/YuzuApplication.kt
+--- eden_v1/src/android/app/src/main/java/org/yuzu/yuzu_emu/YuzuApplication.kt	2026-11-13 09:25:37.303952827 +0000
++++ eden/src/android/app/src/main/java/org/yuzu/yuzu_emu/YuzuApplication.kt	2026-11-13 09:26:35.511229690 +0000
+@@ -23,6 +23,7 @@
+ import org.yuzu.yuzu_emu.utils.DocumentsTree
+ import org.yuzu.yuzu_emu.utils.GpuDriverHelper
+ import org.yuzu.yuzu_emu.utils.Log
++import org.yuzu.yuzu_emu.utils.PvclCrashReport
+ import org.yuzu.yuzu_emu.utils.PowerStateUpdater
+ import org.yuzu.yuzu_emu.utils.ControllerNavigationGlobalHook
+ import java.util.Locale
+@@ -73,6 +74,7 @@
+         NativeLibrary.logDeviceInfo()
+         PowerStateUpdater.start()
+         Log.logDeviceInfo()
++        PvclCrashReport.dumpLastNativeCrash(this)
+         ControllerNavigationGlobalHook.install(this)
+ 
+         createNotificationChannels()
+diff -ruN eden_v1/src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/BooleanSetting.kt eden/src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/BooleanSetting.kt
+--- eden_v1/src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/BooleanSetting.kt	2026-11-13 09:25:37.392001756 +0000
++++ eden/src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/BooleanSetting.kt	2026-11-13 09:26:35.508428066 +0000
+@@ -36,6 +36,14 @@
+     RENDERER_PATCH_OLD_QCOM_DRIVERS("patch_old_qcom_drivers"),
+     PVCL_ENABLED("pvcl_enabled"),
+     PVCL_VERBOSE_LOG("pvcl_verbose_log"),
++    PVCL_SAFE_MODE("pvcl_safe_mode"),
++    PVCL_HIDE_PUSH_DESCRIPTOR("pvcl_hide_push_descriptor"),
++    PVCL_HIDE_CONDITIONAL_RENDERING("pvcl_hide_conditional_rendering"),
++    PVCL_HIDE_DRAW_INDIRECT_COUNT("pvcl_hide_draw_indirect_count"),
++    PVCL_HIDE_CUSTOM_BORDER_COLOR("pvcl_hide_custom_border_color"),
++    PVCL_HIDE_PROVOKING_VERTEX("pvcl_hide_provoking_vertex"),
++    PVCL_HIDE_LINE_RASTERIZATION("pvcl_hide_line_rasterization"),
++    PVCL_HIDE_INDEX_TYPE_UINT8("pvcl_hide_index_type_uint8"),
+     RENDERER_VERTEX_INPUT_DYNAMIC_STATE("vertex_input_dynamic_state"),
+     RENDERER_SAMPLE_SHADING("sample_shading"),
+     RENDERER_FRAME_GEN("frame_gen"),
+diff -ruN eden_v1/src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/view/SettingsItem.kt eden/src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/view/SettingsItem.kt
+--- eden_v1/src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/view/SettingsItem.kt	2026-11-13 09:25:37.395325798 +0000
++++ eden/src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/view/SettingsItem.kt	2026-11-13 09:26:35.508718341 +0000
+@@ -1020,6 +1020,62 @@
+                     descriptionId = R.string.pvcl_verbose_log_description
+                 )
+             )
++            put(
++                SwitchSetting(
++                    BooleanSetting.PVCL_SAFE_MODE,
++                    titleId = R.string.pvcl_safe_mode,
++                    descriptionId = R.string.pvcl_safe_mode_description
++                )
++            )
++            put(
++                SwitchSetting(
++                    BooleanSetting.PVCL_HIDE_PUSH_DESCRIPTOR,
++                    titleId = R.string.pvcl_hide_push_descriptor,
++                    descriptionId = R.string.pvcl_hide_push_descriptor_description
++                )
++            )
++            put(
++                SwitchSetting(
++                    BooleanSetting.PVCL_HIDE_CONDITIONAL_RENDERING,
++                    titleId = R.string.pvcl_hide_conditional_rendering,
++                    descriptionId = R.string.pvcl_hide_conditional_rendering_description
++                )
++            )
++            put(
++                SwitchSetting(
++                    BooleanSetting.PVCL_HIDE_DRAW_INDIRECT_COUNT,
++                    titleId = R.string.pvcl_hide_draw_indirect_count,
++                    descriptionId = R.string.pvcl_hide_draw_indirect_count_description
++                )
++            )
++            put(
++                SwitchSetting(
++                    BooleanSetting.PVCL_HIDE_CUSTOM_BORDER_COLOR,
++                    titleId = R.string.pvcl_hide_custom_border_color,
++                    descriptionId = R.string.pvcl_hide_custom_border_color_description
++                )
++            )
++            put(
++                SwitchSetting(
++                    BooleanSetting.PVCL_HIDE_PROVOKING_VERTEX,
++                    titleId = R.string.pvcl_hide_provoking_vertex,
++                    descriptionId = R.string.pvcl_hide_provoking_vertex_description
++                )
++            )
++            put(
++                SwitchSetting(
++                    BooleanSetting.PVCL_HIDE_LINE_RASTERIZATION,
++                    titleId = R.string.pvcl_hide_line_rasterization,
++                    descriptionId = R.string.pvcl_hide_line_rasterization_description
++                )
++            )
++            put(
++                SwitchSetting(
++                    BooleanSetting.PVCL_HIDE_INDEX_TYPE_UINT8,
++                    titleId = R.string.pvcl_hide_index_type_uint8,
++                    descriptionId = R.string.pvcl_hide_index_type_uint8_description
++                )
++            )
+             // BCn texture patching debug override
+             put(
+                 SwitchSetting(
+diff -ruN eden_v1/src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/ui/SettingsFragmentPresenter.kt eden/src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/ui/SettingsFragmentPresenter.kt
+--- eden_v1/src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/ui/SettingsFragmentPresenter.kt	2026-11-13 09:25:37.397221306 +0000
++++ eden/src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/ui/SettingsFragmentPresenter.kt	2026-11-13 09:26:35.509075191 +0000
+@@ -809,6 +809,14 @@
+         sl.apply {
+             add(BooleanSetting.PVCL_ENABLED.key)
+             add(BooleanSetting.PVCL_VERBOSE_LOG.key)
++            add(BooleanSetting.PVCL_SAFE_MODE.key)
++            add(BooleanSetting.PVCL_HIDE_PUSH_DESCRIPTOR.key)
++            add(BooleanSetting.PVCL_HIDE_CONDITIONAL_RENDERING.key)
++            add(BooleanSetting.PVCL_HIDE_DRAW_INDIRECT_COUNT.key)
++            add(BooleanSetting.PVCL_HIDE_CUSTOM_BORDER_COLOR.key)
++            add(BooleanSetting.PVCL_HIDE_PROVOKING_VERTEX.key)
++            add(BooleanSetting.PVCL_HIDE_LINE_RASTERIZATION.key)
++            add(BooleanSetting.PVCL_HIDE_INDEX_TYPE_UINT8.key)
+         }
+     }
+ 
+diff -ruN eden_v1/src/android/app/src/main/java/org/yuzu/yuzu_emu/utils/PvclCrashReport.kt eden/src/android/app/src/main/java/org/yuzu/yuzu_emu/utils/PvclCrashReport.kt
+--- eden_v1/src/android/app/src/main/java/org/yuzu/yuzu_emu/utils/PvclCrashReport.kt	1970-01-01 00:00:00.000000000 +0000
++++ eden/src/android/app/src/main/java/org/yuzu/yuzu_emu/utils/PvclCrashReport.kt	2026-11-13 09:26:35.510901171 +0000
+@@ -0,0 +1,70 @@
++// SPDX-FileCopyrightText: Copyright 2026 Eden Emulator Project
++// SPDX-License-Identifier: GPL-3.0-or-later
++
++package org.yuzu.yuzu_emu.utils
++
++import android.app.ActivityManager
++import android.app.ApplicationExitInfo
++import android.content.Context
++import android.os.Build
++import org.yuzu.yuzu_emu.getPublicFilesDir
++import java.io.File
++
++/**
++ * PVCL: reads the last native crash recorded by Android (tombstone) and writes it to the Eden log
++ * and to files/log/pvcl_last_crash.txt, because a native crash leaves no trace in the normal log.
++ */
++object PvclCrashReport {
++    private const val MAX_LINES = 400
++    private const val MAX_LINE_LENGTH = 220
++
++    fun dumpLastNativeCrash(context: Context) {
++        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
++            return
++        }
++        try {
++            val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
++            val reasons = manager.getHistoricalProcessExitReasons(context.packageName, 0, 8)
++            val prefs = context.getSharedPreferences("pvcl_crash", Context.MODE_PRIVATE)
++            val lastSeen = prefs.getLong("last_timestamp", 0L)
++            val crash = reasons.firstOrNull {
++                it.reason == ApplicationExitInfo.REASON_CRASH_NATIVE && it.timestamp > lastSeen
++            } ?: return
++            prefs.edit().putLong("last_timestamp", crash.timestamp).apply()
++
++            val lines = ArrayList<String>()
++            lines.add("PVCL: last native crash - pid=${crash.pid} timestamp=${crash.timestamp}")
++            lines.add("PVCL: description=${crash.description}")
++
++            val bytes = crash.traceInputStream?.use { it.readBytes() }
++            if (bytes == null) {
++                lines.add("PVCL: Android did not provide a tombstone for this crash")
++            } else {
++                lines.add("PVCL: tombstone strings (${bytes.size} bytes):")
++                val current = StringBuilder()
++                fun flush() {
++                    if (current.length >= 5 && lines.size < MAX_LINES) {
++                        lines.add("PVCL: " + current.toString().take(MAX_LINE_LENGTH))
++                    }
++                    current.setLength(0)
++                }
++                for (b in bytes) {
++                    val c = b.toInt() and 0xFF
++                    if (c in 0x20..0x7E) {
++                        current.append(c.toChar())
++                    } else {
++                        flush()
++                    }
++                }
++                flush()
++            }
++
++            lines.forEach { Log.error(it) }
++            val dir = File(context.getPublicFilesDir(), "log")
++            dir.mkdirs()
++            File(dir, "pvcl_last_crash.txt").writeText(lines.joinToString("\n"))
++        } catch (e: Throwable) {
++            Log.warning("PVCL: could not read last crash: ${e.message}")
++        }
++    }
++}
+diff -ruN eden_v1/src/android/app/src/main/res/values/strings.xml eden/src/android/app/src/main/res/values/strings.xml
+--- eden_v1/src/android/app/src/main/res/values/strings.xml	2026-11-13 09:25:37.428637051 +0000
++++ eden/src/android/app/src/main/res/values/strings.xml	2026-11-13 09:26:35.510031003 +0000
+@@ -1223,6 +1223,22 @@
+     <string name="pvcl_enabled_description">Allows the GPU to be used even when it lacks features Eden normally requires (anisotropic filtering, wireframe mode, dual-source blending, multiple viewports, extended image gather, demote to helper invocation) by using software fallbacks. Visual glitches may occur in some games. Restart the game after changing.</string>
+     <string name="pvcl_verbose_log">PVCL verbose log</string>
+     <string name="pvcl_verbose_log_description">Writes extra information about missing features to the log.</string>
++    <string name="pvcl_safe_mode">PVCL safe mode</string>
++    <string name="pvcl_safe_mode_description">Hides all the optional Vulkan extensions listed below at once (Eden uses slower, safer alternatives). Try this first if the game crashes. Restart the game after changing.</string>
++    <string name="pvcl_hide_push_descriptor">Hide VK_KHR_push_descriptor</string>
++    <string name="pvcl_hide_push_descriptor_description">Makes Eden ignore this optional extension and use a fallback. Useful to find which extension crashes the GPU driver. Restart the game after changing.</string>
++    <string name="pvcl_hide_conditional_rendering">Hide VK_EXT_conditional_rendering</string>
++    <string name="pvcl_hide_conditional_rendering_description">Makes Eden ignore this optional extension and use a fallback. Useful to find which extension crashes the GPU driver. Restart the game after changing.</string>
++    <string name="pvcl_hide_draw_indirect_count">Hide VK_KHR_draw_indirect_count</string>
++    <string name="pvcl_hide_draw_indirect_count_description">Makes Eden ignore this optional extension and use a fallback. Useful to find which extension crashes the GPU driver. Restart the game after changing.</string>
++    <string name="pvcl_hide_custom_border_color">Hide VK_EXT_custom_border_color</string>
++    <string name="pvcl_hide_custom_border_color_description">Makes Eden ignore this optional extension and use a fallback. Useful to find which extension crashes the GPU driver. Restart the game after changing.</string>
++    <string name="pvcl_hide_provoking_vertex">Hide VK_EXT_provoking_vertex</string>
++    <string name="pvcl_hide_provoking_vertex_description">Makes Eden ignore this optional extension and use a fallback. Useful to find which extension crashes the GPU driver. Restart the game after changing.</string>
++    <string name="pvcl_hide_line_rasterization">Hide VK_EXT_line_rasterization</string>
++    <string name="pvcl_hide_line_rasterization_description">Makes Eden ignore this optional extension and use a fallback. Useful to find which extension crashes the GPU driver. Restart the game after changing.</string>
++    <string name="pvcl_hide_index_type_uint8">Hide VK_EXT_index_type_uint8</string>
++    <string name="pvcl_hide_index_type_uint8_description">Makes Eden ignore this optional extension and use a fallback. Useful to find which extension crashes the GPU driver. Restart the game after changing.</string>
+     <string name="gpu_driver_settings">GPU Driver Settings</string>
+     <string name="freedreno_presets">Quick Presets</string>
+     <string name="freedreno_current_settings">Current Settings</string>
+diff -ruN eden_v1/src/android/app/src/main/res/values-pt-rBR/strings.xml eden/src/android/app/src/main/res/values-pt-rBR/strings.xml
+--- eden_v1/src/android/app/src/main/res/values-pt-rBR/strings.xml	2026-11-13 09:25:37.433025966 +0000
++++ eden/src/android/app/src/main/res/values-pt-rBR/strings.xml	2026-11-13 09:26:35.510688416 +0000
+@@ -940,4 +940,20 @@
+     <string name="pvcl_enabled_description">Permite usar a GPU mesmo sem recursos que o Eden normalmente exige (filtro anisotrópico, modo wireframe, blend de fonte dupla, múltiplos viewports, gather estendido, demote to helper invocation), usando alternativas por software. Pode causar falhas visuais em alguns jogos. Reinicie o jogo após alterar.</string>
+     <string name="pvcl_verbose_log">Log detalhado do PVCL</string>
+     <string name="pvcl_verbose_log_description">Grava no log informações extras sobre recursos ausentes.</string>
++    <string name="pvcl_safe_mode">Modo seguro do PVCL</string>
++    <string name="pvcl_safe_mode_description">Oculta de uma vez todas as extensões Vulkan opcionais listadas abaixo (o Eden usa alternativas mais lentas e seguras). Teste isto primeiro se o jogo fechar. Reinicie o jogo após alterar.</string>
++    <string name="pvcl_hide_push_descriptor">Ocultar VK_KHR_push_descriptor</string>
++    <string name="pvcl_hide_push_descriptor_description">Faz o Eden ignorar esta extensão opcional e usar uma alternativa. Útil para descobrir qual extensão derruba o driver da GPU. Reinicie o jogo após alterar.</string>
++    <string name="pvcl_hide_conditional_rendering">Ocultar VK_EXT_conditional_rendering</string>
++    <string name="pvcl_hide_conditional_rendering_description">Faz o Eden ignorar esta extensão opcional e usar uma alternativa. Útil para descobrir qual extensão derruba o driver da GPU. Reinicie o jogo após alterar.</string>
++    <string name="pvcl_hide_draw_indirect_count">Ocultar VK_KHR_draw_indirect_count</string>
++    <string name="pvcl_hide_draw_indirect_count_description">Faz o Eden ignorar esta extensão opcional e usar uma alternativa. Útil para descobrir qual extensão derruba o driver da GPU. Reinicie o jogo após alterar.</string>
++    <string name="pvcl_hide_custom_border_color">Ocultar VK_EXT_custom_border_color</string>
++    <string name="pvcl_hide_custom_border_color_description">Faz o Eden ignorar esta extensão opcional e usar uma alternativa. Útil para descobrir qual extensão derruba o driver da GPU. Reinicie o jogo após alterar.</string>
++    <string name="pvcl_hide_provoking_vertex">Ocultar VK_EXT_provoking_vertex</string>
++    <string name="pvcl_hide_provoking_vertex_description">Faz o Eden ignorar esta extensão opcional e usar uma alternativa. Útil para descobrir qual extensão derruba o driver da GPU. Reinicie o jogo após alterar.</string>
++    <string name="pvcl_hide_line_rasterization">Ocultar VK_EXT_line_rasterization</string>
++    <string name="pvcl_hide_line_rasterization_description">Faz o Eden ignorar esta extensão opcional e usar uma alternativa. Útil para descobrir qual extensão derruba o driver da GPU. Reinicie o jogo após alterar.</string>
++    <string name="pvcl_hide_index_type_uint8">Ocultar VK_EXT_index_type_uint8</string>
++    <string name="pvcl_hide_index_type_uint8_description">Faz o Eden ignorar esta extensão opcional e usar uma alternativa. Útil para descobrir qual extensão derruba o driver da GPU. Reinicie o jogo após alterar.</string>
+ </resources>
+diff -ruN eden_v1/src/common/settings.h eden/src/common/settings.h
+--- eden_v1/src/common/settings.h	2026-11-13 09:25:37.500001760 +0000
++++ eden/src/common/settings.h	2026-11-13 09:26:35.507070923 +0000
+@@ -782,6 +782,14 @@
+     // PVCL: compatibility layer for GPUs (e.g. PowerVR) missing mandatory Vulkan features
+     Setting<bool> pvcl_enabled{linkage, true, "pvcl_enabled", Category::RendererDebug};
+     Setting<bool> pvcl_verbose_log{linkage, false, "pvcl_verbose_log", Category::RendererDebug};
++    Setting<bool> pvcl_safe_mode{linkage, false, "pvcl_safe_mode", Category::RendererDebug};
++    Setting<bool> pvcl_hide_push_descriptor{linkage, false, "pvcl_hide_push_descriptor", Category::RendererDebug};
++    Setting<bool> pvcl_hide_conditional_rendering{linkage, false, "pvcl_hide_conditional_rendering", Category::RendererDebug};
++    Setting<bool> pvcl_hide_draw_indirect_count{linkage, false, "pvcl_hide_draw_indirect_count", Category::RendererDebug};
++    Setting<bool> pvcl_hide_custom_border_color{linkage, false, "pvcl_hide_custom_border_color", Category::RendererDebug};
++    Setting<bool> pvcl_hide_provoking_vertex{linkage, false, "pvcl_hide_provoking_vertex", Category::RendererDebug};
++    Setting<bool> pvcl_hide_line_rasterization{linkage, false, "pvcl_hide_line_rasterization", Category::RendererDebug};
++    Setting<bool> pvcl_hide_index_type_uint8{linkage, false, "pvcl_hide_index_type_uint8", Category::RendererDebug};
+     SwitchableSetting<bool> disable_buffer_reorder{linkage, false, "disable_buffer_reorder",
+                                          Category::RendererDebug,
+                                          Specialization::Default,
+diff -ruN eden_v1/src/video_core/vulkan_common/vulkan_device.cpp eden/src/video_core/vulkan_common/vulkan_device.cpp
+--- eden_v1/src/video_core/vulkan_common/vulkan_device.cpp	2026-11-13 09:25:37.920001775 +0000
++++ eden/src/video_core/vulkan_common/vulkan_device.cpp	2026-11-13 09:26:35.508068828 +0000
+@@ -124,6 +124,33 @@
+     return std::ranges::find(tolerated, std::string_view{name}) != tolerated.end();
+ }
+ 
++// PVCL: lets the user make Eden ignore optional extensions, to find which one crashes the driver.
++void PvclHideExtensions(std::set<std::string, std::less<>>& supported) {
++    if (!Settings::values.pvcl_enabled.GetValue()) {
++        return;
++    }
++    struct Entry {
++        bool hide;
++        const char* name;
++        const char* label;
++    };
++    const bool safe_mode = Settings::values.pvcl_safe_mode.GetValue();
++    const Entry entries[] = {
++        {Settings::values.pvcl_hide_push_descriptor.GetValue(), VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME, "VK_KHR_push_descriptor"},
++        {Settings::values.pvcl_hide_conditional_rendering.GetValue(), VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME, "VK_EXT_conditional_rendering"},
++        {Settings::values.pvcl_hide_draw_indirect_count.GetValue(), VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME, "VK_KHR_draw_indirect_count"},
++        {Settings::values.pvcl_hide_custom_border_color.GetValue(), VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME, "VK_EXT_custom_border_color"},
++        {Settings::values.pvcl_hide_provoking_vertex.GetValue(), VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME, "VK_EXT_provoking_vertex"},
++        {Settings::values.pvcl_hide_line_rasterization.GetValue(), VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME, "VK_EXT_line_rasterization"},
++        {Settings::values.pvcl_hide_index_type_uint8.GetValue(), VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME, "VK_EXT_index_type_uint8"},
++    };
++    for (const Entry& entry : entries) {
++        if ((safe_mode || entry.hide) && supported.erase(std::string{entry.name}) > 0) {
++            LOG_WARNING(Render_Vulkan, "PVCL: hiding extension {}", entry.label);
++        }
++    }
++}
++
+ template <typename T>
+ void SetNext(void**& next, T& data) {
+     *next = &data;
+@@ -1038,6 +1065,8 @@
+         supported_extensions.insert(property.extensionName);
+     }
+ 
++    PvclHideExtensions(supported_extensions);
++
+     // Generate list of extensions to load.
+     loaded_extensions.clear();
+ 
